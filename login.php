@@ -25,7 +25,7 @@
                 <form role="form" method="post" action="login.php">
                     <fieldset>
                         <div class="form-group"  >
-                            <input class="form-control" placeholder="Name" name="name" type="name" autofocus>
+                            <input class="form-control" placeholder="Username" name="name" type="text" autofocus>
                         </div>
                         <div class="form-group">
                             <input class="form-control" placeholder="Password" name="password" type="password" value="">
@@ -41,19 +41,29 @@
 </html>
 
 <?php
-require_once "config/config.php";
+include_once 'config/database.php';
+include_once 'objects/Users.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$users = new Users($db);
+
 if(isset($_POST['login'])) {
-    $user_name = $_POST['name'];
-    $user_pass = $_POST['password'];
 
-    $check_user = "SELECT * FROM users WHERE name = '$user_name' AND password = '$user_pass'";
-    $run = mysqli_query($dbcon, $check_user);
+    $user_err = $_POST['name'];
+    $pass_err = $_POST['password'];
 
-    if(mysqli_num_rows($run)) {
-        echo "<script>window.open('index.php','_SELF')</script>";
-        $_SESSION['name'] = $user_name;
-    } else {
-        echo "<script>alert('Name or password is incorrect!')</script>";
+    if($user_err && $pass_err != '') {
+        $users->name = $_POST['name'];
+        $users->password = $_POST['password'];
+
+        if ($users->checkUser()) {
+            echo "<script>window.open('index.php','_SELF')</script>";
+            $_SESSION['name'] = $users->name;
+        } else {
+            echo "<script>alert('But I always tend to be false')</script>";
+        }
     }
 }
 ?>

@@ -37,32 +37,39 @@
 </body>
 </html>
 <?php
-require_once "config/config.php";
-if(isset($_POST['register'])) {
-    $user_name = $_POST['name'];
-    $user_pass = $_POST['password'];
 
-    if($user_name == '') {
+include_once 'config/database.php';
+include_once 'objects/Users.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$users = new Users($db);
+
+if(isset($_POST['register'])) {
+    $user_err = $_POST['name'];
+    $pass_err = $_POST['password'];
+
+    if($user_err == '') {
         echo"<script>alert('Please enter the name')</script>";
         exit();
     }
 
-    if($user_pass == '') {
+    if($pass_err == '') {
         echo"<script>alert('Please enter the password')</script>";
         exit();
     }
 
-    $check_name_query = "SELECT * FROM users WHERE name = '$user_name'";
-    $run_query = mysqli_query($dbcon,$check_name_query);
+    if($user_err && $pass_err != '') {
 
-    if(mysqli_num_rows($run_query)>0) {
-        echo "<script>alert(config$user_name)</script>";
-        exit();
-    }
+        $users-> name = $_POST['name'];
+        $users-> password = $_POST['password'];
 
-    $insert_user = "INSERT INTO users (name, password) VALUE ('$user_name', '$user_pass')";
-    if(mysqli_query($dbcon,$insert_user)) {
-        echo "<script>window.open('login.php','_self')</script>";
+        if ($users->create()) {
+            header("location: login.php");
+        } else {
+            header("location: error.php");
+        }
     }
 }
 ?>

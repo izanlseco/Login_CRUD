@@ -3,15 +3,23 @@ session_start();
 if(!$_SESSION['name']) {
     header("Location: register.php");
 }
+$id = isset($_GET['id']) ? $_GET['id'] : die('ERROR: missing ID.');
 
-require_once "config/config.php";
+include_once 'config/database.php';
+include_once 'objects/AvailableCars.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$availableCars = new AvailableCars($db);
+
+$availableCars->id = $id;
+$availableCars->readOne();
 
 $plate = $brand = $model = $color = $kilometers = "";
 $plate_err = $brand_err = $model_err = $color_err = $km_err = "";
 
-if(isset($_POST["id"]) && !empty($_POST["id"])){
-    $id = $_POST["id"];
-
+if($_POST){
 
     $input_plate = trim($_POST["plate"]);
     if(empty($input_plate)){
@@ -51,62 +59,19 @@ if(isset($_POST["id"]) && !empty($_POST["id"])){
     }
 
     if(empty($plate_err) && empty($brand_err) && empty($model_err) && empty($color_err) && empty($km_err)){
-        $sql = "UPDATE available_cars SET license_plate = ?, brand = ?, model = ?, color = ?, kilometers = ? WHERE license_plate = ?";
+        $availableCars->license_plate = $_POST['plate'];
+        $availableCars->brand = $_POST['brand'];
+        $availableCars->model = $_POST['model'];
+        $availableCars->color = $_POST['color'];
+        $availableCars->kilometers = $_POST['kilometers'];
 
-        if($stmt = mysqli_prepare($dbcon, $sql)){
-            mysqli_stmt_bind_param($stmt, "ssssis", $param_plate, $param_brand, $param_model, $param_color, $param_km, $param_plate);
-
-            $param_plate = $plate;
-            $param_brand = $brand;
-            $param_model = $model;
-            $param_color = $color;
-            $param_km = $kilometers;
-
-            if(mysqli_stmt_execute($stmt)){
-                header("location: index.php");
-                exit();
-            } else{
-                echo "Something went wrong. Please try again later.";
-            }
+        if ($availableCars->update()) {
+            header("location: index.php");
+        } else {
+            echo "<div class='alert alert-danger'>Unable to edit the car.</div>";
         }
-        mysqli_stmt_close($stmt);
-    }
-    mysqli_close($dbcon);
-} else{
-    if(isset($_GET["id"]) && !empty(trim($_GET["id"]))){
-        $plate =  trim($_GET["id"]);
-
-        $sql = "SELECT * FROM available_cars WHERE license_plate = ?";
-        if($stmt = mysqli_prepare($dbcon, $sql)){
-            mysqli_stmt_bind_param($stmt, "s", $param_plate);
-
-            $param_plate = $plate;
-
-            if(mysqli_stmt_execute($stmt)){
-                $result = mysqli_stmt_get_result($stmt);
-
-                if(mysqli_num_rows($result) == 1){
-                    $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-
-                    $plate = $row["license_plate"];
-                    $brand = $row["brand"];
-                    $model = $row["model"];
-                    $color = $row["color"];
-                    $kilometers = $row["kilometers"];
-                } else{
-                    header("location: error.php");
-                    exit();
-                }
-
-            } else{
-                echo "Oops! Something went wrong. Please try again later.";
-            }
-        }
-        mysqli_stmt_close($stmt);
-        mysqli_close($dbcon);
-    }  else{
+    } else {
         header("location: error.php");
-        exit();
     }
 }
 ?>
@@ -133,33 +98,33 @@ if(isset($_POST["id"]) && !empty($_POST["id"])){
                     <h2>Update Record</h2>
                 </div>
                 <p>Please edit the input values and submit to update the record.</p>
-                <form action="<?php echo htmlspecialchars(basename($_SERVER['REQUEST_URI'])); ?>" method="post">
+                <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF'] . "?id={$id}"); ?>" method="post">
                     <div class="form-group <?php echo (!empty($plate_err)) ? 'has-error' : ''; ?>">
                         <label>License plate</label>
-                        <input type="text" name="plate" class="form-control" value="<?php echo $plate; ?>">
+                        <input type="text" name="plate" class="form-control" value="<?php echo $availableCars->license_plate; ?>">
                         <span class="help-block"><?php echo $plate_err;?></span>
                     </div>
                     <div class="form-group <?php echo (!empty($brand_err)) ? 'has-error' : ''; ?>">
                         <label>Brand</label>
-                        <input type="text" name="brand" class="form-control" value="<?php echo $brand; ?>">
+                        <input type="text" name="brand" class="form-control" value="<?php echo $availableCars->brand; ?>">
                         <span class="help-block"><?php echo $brand_err;?></span>
                     </div>
                     <div class="form-group <?php echo (!empty($model_err)) ? 'has-error' : ''; ?>">
                         <label>Model</label>
-                        <input type="text" name="model" class="form-control" value="<?php echo $model; ?>">
+                        <input type="text" name="model" class="form-control" value="<?php echo $availableCars->model; ?>">
                         <span class="help-block"><?php echo $model_err;?></span>
                     </div>
                     <div class="form-group <?php echo (!empty($color_err)) ? 'has-error' : ''; ?>">
                         <label>Color</label>
-                        <input type="text" name="color" class="form-control" value="<?php echo $color; ?>">
+                        <input type="text" name="color" class="form-control" value="<?php echo $availableCars->color; ?>">
                         <span class="help-block"><?php echo $color_err;?></span>
                     </div>
                     <div class="form-group <?php echo (!empty($km_err)) ? 'has-error' : ''; ?>">
                         <label>Kilometers</label>
-                        <input type="text" name="kilometers" class="form-control" value="<?php echo $kilometers; ?>">
+                        <input type="text" name="kilometers" class="form-control" value="<?php echo $availableCars->kilometers; ?>">
                         <span class="help-block"><?php echo $km_err;?></span>
                     </div>
-                    <input type="hidden" name="id" value="<?php echo $id; ?>"/>
+                    <input type="hidden" name="id" value="<?php echo trim($_GET["id"]); ?>"/>
                     <input type="submit" class="btn btn-primary" value="Submit">
                     <a href="index.php" class="btn btn-default">Cancel</a>
                 </form>

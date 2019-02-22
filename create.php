@@ -4,7 +4,13 @@ if(!$_SESSION['name']) {
     header("Location: register.php");
 }
 
-require_once "config/config.php";
+include_once 'config/database.php';
+include_once 'objects/AvailableCars.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$availableCars = new AvailableCars($db);
 
 $plate = $brand = $model = $color = $kilometers = "";
 $plate_err = $brand_err = $model_err = $color_err = $km_err = "";
@@ -48,28 +54,21 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
         $kilometers = $input_km;
     }
 
-    if(empty($plate_err) && empty($brand_err) && empty($model_err) && empty($color_err) && empty($km_err)){
-        $sql = "INSERT INTO available_cars (license_plate, brand, model, color, kilometers) VALUES (?, ?, ?, ?, ?)";
+    if(empty($plate_err) && empty($brand_err) && empty($model_err) && empty($color_err) && empty($km_err)) {
+        $availableCars->license_plate = $_POST['plate'];
+        $availableCars->brand = $_POST['brand'];
+        $availableCars->model = $_POST['model'];
+        $availableCars->color = $_POST['color'];
+        $availableCars->kilometers = $_POST['kilometers'];
 
-        if($stmt = mysqli_prepare($dbcon, $sql)){
-            mysqli_stmt_bind_param($stmt, "ssssi", $param_plate, $param_brand, $param_model, $param_color, $param_km);
-
-            $param_plate = $plate;
-            $param_brand = $brand;
-            $param_model = $model;
-            $param_color = $color;
-            $param_km = $kilometers;
-
-            if(mysqli_stmt_execute($stmt)){
-                header("location: index.php");
-                exit();
-            } else{
-                echo "Something went wrong. Please try again later.";
-            }
+        if ($availableCars->create()) {
+            header("location: index.php");
+        } else {
+            echo "<div class='alert alert-danger'>Unable to put the car.</div>";
         }
-        mysqli_stmt_close($stmt);
+    } else {
+        header("location: error.php");
     }
-    mysqli_close($dbcon);
 }
 ?>
 

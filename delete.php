@@ -1,33 +1,29 @@
 <?php
+session_start();
+if(!$_SESSION['name']) {
+    header("Location: register.php");
+}
+
+include_once 'config/database.php';
+include_once 'objects/AvailableCars.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$availableCars = new AvailableCars($db);
+
 if(isset($_POST["id"]) && !empty($_POST["id"])){
-    session_start();
-    if(!$_SESSION['name']) {
-        header("Location: register.php");
+
+    $availableCars->id = $_POST['id'];
+
+    if ($availableCars->delete()) {
+        header("location: index.php");
+    } else {
+        echo "<div class='alert alert-danger'>Unable to delete the car.</div>";
     }
-
-    require_once "config/config.php";
-
-    $sql = "DELETE FROM available_cars WHERE license_plate = ?";
-
-    if($stmt = mysqli_prepare($dbcon, $sql)){
-        mysqli_stmt_bind_param($stmt, "s", $param_plate);
-
-        $param_plate = trim($_POST["id"]);
-
-        if(mysqli_stmt_execute($stmt)){
-            header("location: index.php");
-            exit();
-        } else{
-            echo "Oops! Something went wrong. Please try again later.";
-        }
-    }
-    mysqli_stmt_close($stmt);
-    mysqli_close($dbcon);
-} else{
-    if(empty(trim($_GET["id"]))){
+} else if(empty(trim($_GET["id"]))){
         header("location: error.php");
         exit();
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -53,9 +49,9 @@ if(isset($_POST["id"]) && !empty($_POST["id"])){
                 </div>
                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
                     <div class="alert alert-danger fade in">
-                        <input type="hidden" name="id" value="<?php echo trim($_GET["id"]); ?>"/>
                         <p>Are you sure you want to delete this record? This action cannot be undone.</p><br>
                         <p>
+                            <input type="hidden" name="id" value="<?php echo trim($_GET["id"]); ?>"/>
                             <input type="submit" value="Yes" class="btn btn-danger">
                             <a href="index.php" class="btn btn-default">No</a>
                         </p>
