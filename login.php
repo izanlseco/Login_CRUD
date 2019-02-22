@@ -62,7 +62,7 @@ if(isset($_POST['login'])) {
             echo "<script>window.open('index.php','_SELF')</script>";
             $_SESSION['name'] = $users->name;
         } else {
-            echo "<script>alert('But I always tend to be false')</script>";
+            echo "<script>alert('Incorrect name or password.')</script>";
         }
     }
 }

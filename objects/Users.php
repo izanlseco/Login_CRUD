@@ -12,8 +12,7 @@ class Users {
     }
 
     function checkUser(){
-        $query = "SELECT name, password,
-                  COUNT(*) FROM
+        $query = "SELECT * FROM
                   " . $this->tableName ."
                   WHERE name=:name AND password=:password";
         $stmt = $this->conn->prepare($query);
@@ -23,8 +22,11 @@ class Users {
 
         $stmt->bindParam(":name", $this->name);
         $stmt->bindParam(":password", $this->password);
+        $stmt->execute();
 
-        if($stmt->execute()){
+        $result = $stmt->fetch();
+
+        if($result>0){
             return true;
         } else {
             return false;
