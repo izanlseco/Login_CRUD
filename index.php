@@ -36,49 +36,57 @@
                 </div>
                 <?php
                 session_start();
+
                 if(!$_SESSION['name']) {
                     header("Location: register.php");
                 }
-                require_once "config/config.php";
 
-                $sql = "SELECT * FROM available_cars";
-                if($result = mysqli_query($dbcon, $sql)){
-                    if(mysqli_num_rows($result) > 0){
-                        echo "<table class='table table-bordered table-striped'>";
+                include_once 'config/database.php';
+                include_once 'objects/AvailableCars.php';
+
+                $database = new Database();
+                $db = $database->getConnection();
+
+                $availableCars = new AvailableCars($db);
+
+                $stmt = $availableCars->readAll();
+                $num = $stmt->rowCount();
+
+                if($num > 0){
+                    echo "<table class='table table-bordered table-striped'>";
                         echo "<thead>";
-                        echo "<tr>";
-                        echo "<th>Plates</th>";
-                        echo "<th>Brand</th>";
-                        echo "<th>Model</th>";
-                        echo "<th>Color</th>";
-                        echo "<th>Kilometers</th>";
-                        echo "<th>Action</th>";
-                        echo "</tr>";
-                        echo "</thead>";
-                        echo "<tbody>";
-                        while($row = mysqli_fetch_array($result)){
                             echo "<tr>";
-                            echo "<td>" . $row['license_plate'] . "</td>";
-                            echo "<td>" . $row['brand'] . "</td>";
-                            echo "<td>" . $row['model'] . "</td>";
-                            echo "<td>" . $row['color'] . "</td>";
-                            echo "<td>" . $row['kilometers'] . "</td>";
-                            echo "<td>";
-                            echo "<a href='update.php?id=". $row['license_plate'] ."' title='Update Record' data-toggle='tooltip'><span class='glyphicon glyphicon-pencil'></span></a>";
-                            echo "<a href='delete.php?id=". $row['license_plate'] ."' title='Delete Record' data-toggle='tooltip'><span class='glyphicon glyphicon-trash'></span></a>";
-                            echo "</td>";
+                                echo "<th>Plates</th>";
+                                echo "<th>Brand</th>";
+                                echo "<th>Model</th>";
+                                echo "<th>Color</th>";
+                                echo "<th>Kilometers</th>";
+                                echo "<th>Action</th>";
                             echo "</tr>";
-                        }
-                        echo "</tbody>";
-                        echo "</table>";
-                        mysqli_free_result($result);
-                    } else{
-                        echo "<p class='lead'><em>No records were found.</em></p>";
+                        echo "</thead>";
+                    echo "<tbody>";
+
+                    while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+
+                        extract($row);
+
+                        echo "<tr>";
+                            echo "<td>$license_plate</td>";
+                            echo "<td>$brand</td>";
+                            echo "<td>$model</td>";
+                            echo "<td>$color</td>";
+                            echo "<td>$kilometers</td>";
+                            echo "<td>";
+                                echo "<a href='update.php?id={$id}' title='Update Record' data-toggle='tooltip'><span class='glyphicon glyphicon-pencil'></span></a>";
+                                echo "<a href='delete.php?id={$id}' title='Delete Record' data-toggle='tooltip'><span class='glyphicon glyphicon-trash'></span></a>";
+                            echo "</td>";
+                        echo "</tr>";
                     }
-                } else{
-                    echo "ERROR: Could not able to execute $sql. " . mysqli_error($dbcon);
+                    echo "</tbody>";
+                    echo "</table>";
+                } else {
+                    echo "<p class='lead'><em>No records were found.</em></p>";
                 }
-                mysqli_close($dbcon);
                 ?>
             </div>
         </div>
